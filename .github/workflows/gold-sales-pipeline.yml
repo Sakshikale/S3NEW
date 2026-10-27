@@ -40,16 +40,16 @@ jobs:
         run: snow connection test -x
 
       - name: Load RAW layer
-        run: snow sql -f sql/01_load_raw.sql -x
+        run: snow sql -f sql/load_raw.sql -x
 
       - name: Transform CLEANSED layer
-        run: snow sql -f sql/02_cleanse.sql -x
+        run: snow sql -f sql/cleanse.sql -x
 
       - name: Build CURATED layer
-        run: snow sql -f sql/03_curated.sql -x
+        run: snow sql -f sql/curated.sql -x
 
       - name: Create reporting view
-        run: snow sql -f sql/04_report_view.sql -x
+        run: snow sql -f sql/report_view.sql -x
 
       - name: Validate reporting view
         run: |
