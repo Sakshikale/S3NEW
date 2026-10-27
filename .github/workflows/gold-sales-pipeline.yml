@@ -1,0 +1,61 @@
+
+name: Gold Sales Snowflake Pipeline
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "data/**"
+      - "sql/**"
+      - ".github/workflows/gold-sales-pipeline.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gold-sales-pipeline:
+    name: Load and Transform Gold Sales
+    runs-on: ubuntu-latest
+
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+      SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+      SNOWFLAKE_ROLE: ${{ secrets.SNOWFLAKE_ROLE }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install Snowflake CLI
+        uses: snowflakedb/snowflake-actions@v3
+        with:
+          cli-version: "3.16.0"
+
+      - name: Test Snowflake connection
+        run: snow connection test -x
+
+      - name: Load RAW layer
+        run: snow sql -f sql/01_load_raw.sql -x
+
+      - name: Transform CLEANSED layer
+        run: snow sql -f sql/02_cleanse.sql -x
+
+      - name: Build CURATED layer
+        run: snow sql -f sql/03_curated.sql -x
+
+      - name: Create reporting view
+        run: snow sql -f sql/04_report_view.sql -x
+
+      - name: Validate reporting view
+        run: |
+          snow sql -q "
+            SELECT
+              COUNT(*) AS REPORT_ROWS,
+              SUM(TOTAL_SALES_USD) AS TOTAL_SALES_USD
+            FROM GOLDSALES_DB.CURATED.VW_GOLD_SALES_REPORT;
+          " -x
