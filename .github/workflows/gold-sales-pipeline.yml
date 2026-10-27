@@ -38,6 +38,9 @@ jobs:
 
       - name: Test Snowflake connection
         run: snow connection test -x
+        
+      - name: Setup layer
+        run: snow sql -f sql/setup.sql -x
 
       - name: Load RAW layer
         run: snow sql -f sql/load_raw.sql -x
